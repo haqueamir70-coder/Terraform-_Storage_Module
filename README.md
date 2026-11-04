@@ -1,69 +1,62 @@
-<div align="center">
+# Terraform Azure Storage Modules
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:1E3A8A,50:2563EB,100:67E8F9&height=190&section=header&text=Terraform+Azure+Storage+Modules&fontSize=34&fontColor=ffffff&animation=fadeIn" alt="Terraform storage module architecture banner" width="100%" />
+> **Status:** Reusable Terraform module learning project with a root composition layer, typed inputs, outputs, secure storage defaults and GitHub Actions validation. This is not a deployed production platform.
 
-<img src="https://readme-typing-svg.demolab.com/?font=Fira+Code&weight=600&size=17&pause=1200&color=00C7FF&center=true&vCenter=true&width=900&height=40&lines=Reusable+Infrastructure+%E2%80%A2+Storage+%E2%80%A2+Secure+Defaults" alt="Animated project tagline" />
-
-[![Terraform](https://img.shields.io/badge/Terraform-IaC-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)](https://developer.hashicorp.com/terraform)
-[![Azure](https://img.shields.io/badge/Microsoft-Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/)
-[![Portfolio](https://img.shields.io/badge/Portfolio-MD%20Amirul-181717?style=for-the-badge&logo=github)](https://github.com/haqueamir70-coder)
-
-</div>
-
-> **Portfolio project:** implementation status and limitations are documented below. The diagram describes the intended workflow/architecture and is not proof of a successful production deployment.
-
-## 🗺️ Architecture at a Glance
+## Architecture
 
 ```mermaid
-flowchart TD
-  A[Root Module] --> B[Resource Group Module]
-  A --> C[Storage Account Module]
-  C --> D[Private Blob Container]
-  C --> E[Network and TLS Controls]
-  C --> F[Outputs]
+flowchart TB
+  Inputs[Typed root variables] --> Root[Root Terraform module]
+  Root --> RG[Resource group child module]
+  Root --> SA[Storage account child module]
+  RG --> Outputs[Root outputs]
+  SA --> Outputs
 ```
 
----
+## Modules
 
-# Terraform Azure Storage and Resource Modules
+| Module | Responsibility |
+|---|---|
+| `azurerm_resource_group` | Create one or more resource groups with `for_each` |
+| `azurerm_storage_account` | Create one or more StorageV2 accounts with secure transport/network defaults |
 
-A practice repository for learning how to organize Azure resources into reusable Terraform modules.
+The root module composes both child modules. Storage account resource group names are explicit inputs; ensure each referenced group is created by this configuration or already exists in the target subscription.
 
-## Current layout
+## Prerequisites
 
-The repository includes directories for an Azure resource group and Azure storage account, along with a parent-module path. Inspect the directory contents to verify the exact implementation and module wiring.
+- Terraform CLI 1.6+
+- Azure CLI authenticated to a test subscription
+- Permission to create resource groups and storage accounts
 
-## Suggested validation workflow
-
-Run from the Terraform root module:
+## Validate
 
 ```bash
 terraform fmt -check -recursive
-terraform init
+terraform init -backend=false
 terraform validate
-terraform plan
 ```
 
-Review the plan carefully before applying resources to Azure. Storage resources can incur charges, so use a test subscription and clean up resources when finished.
+## Configure a plan
 
-## Module documentation checklist
+Copy `terraform.tfvars.example` to `terraform.tfvars`, choose a globally unique storage account name (3–24 lowercase letters/numbers), and review the full plan:
 
-For each module, document:
+```bash
+terraform plan -out=tfplan
+terraform show -no-color tfplan
+```
 
-- Purpose and resources created
-- Required and optional input variables
-- Outputs and how callers consume them
-- Example usage
-- Provider and version requirements
-- Naming, region, security, and cost considerations
-- Validation steps and safe cleanup instructions
+Apply only after approval. This repository does not configure remote state or create private endpoints. Storage accounts default to public network access disabled and shared-key access disabled, so a workload will need an approved private endpoint/VNet path and Microsoft Entra data-plane authorization before it can access blob data.
 
-## Security notes
+## Security
 
-- Do not commit credentials, state files, or real secret-bearing variable files.
-- Keep storage network access and public access disabled unless there is a clear requirement.
-- Prefer Microsoft Entra ID/RBAC where supported and grant least privilege.
-- Enable appropriate encryption, logging, retention, and recovery controls for the intended workload.
+- HTTPS-only, TLS 1.2 minimum, shared-key authentication disabled and public network access disabled.
+- Do not commit Terraform state, plan files, credentials or real `*.tfvars`.
+- Configure encrypted remote state, access control, versioning and locking before team use.
+- Add private endpoints, private DNS and scoped RBAC assignments for a real workload; validate DNS and data-plane access from the intended network.
+
+## CI
+
+GitHub Actions checks formatting and validates the root module with a backend-free initialization. CI does not deploy Azure resources or validate subscription permissions.
 
 ## Author
 
