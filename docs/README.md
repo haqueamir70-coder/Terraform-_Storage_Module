@@ -32,3 +32,46 @@ flowchart TB
 
 ## Interview preparation note
 For each answer, cover the design rationale, trust boundary, failure mode, operational telemetry and validation method. Distinguish implemented, CI-validated, cloud-deployed and planned capabilities.
+
+
+## Interview questions — suggested answers
+
+### 1. Answer
+
+Enable HTTPS-only, TLS 1.2+, secure transfer, encryption, minimum required public access, private connectivity where needed, identity-based access and diagnostics.
+
+### 2. Answer
+
+Account-level settings define service capabilities and network/security defaults; container-level settings govern individual blob access and permissions.
+
+### 3. Answer
+
+Shared Key grants broad account-key access and is hard to scope/audit per identity. Entra ID/RBAC provides role-based, identity-centric authorization.
+
+### 4. Answer
+
+Private endpoint assigns a private IP in the VNet; private DNS links the service FQDN to that address for clients on linked networks.
+
+### 5. Answer
+
+Versioning preserves prior blob versions; soft delete retains deleted blobs/containers for a configured period. Both help recovery but increase storage cost.
+
+### 6. Answer
+
+LRS stores locally redundant copies, ZRS synchronously spans zones, GRS replicates to a paired region asynchronously, and GZRS combines zone and geo redundancy.
+
+### 7. Answer
+
+Lifecycle rules transition or delete blobs based on age, access tier or prefix. Test rules carefully to avoid deleting active data.
+
+### 8. Answer
+
+Outputs should expose non-secret IDs, names and endpoints. Do not output account keys, SAS tokens or credentials; mark sensitive values where unavoidable.
+
+### 9. Answer
+
+Use fmt/init/validate, TFLint and Checkov, plus tests for input validation and secure configuration. Add an integration test only in a controlled subscription.
+
+### 10. Answer
+
+Plan changes, verify data retention and replication requirements, back up/migrate data, avoid replacement of populated accounts, and use staged changes with rollback.
