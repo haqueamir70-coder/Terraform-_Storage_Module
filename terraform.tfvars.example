@@ -1,0 +1,16 @@
+resource_groups = {
+  dev = {
+    name     = "rg-storage-modules-dev"
+    location = "eastus"
+  }
+}
+
+storage_accounts = {
+  dev = {
+    name                     = "ststoragemodules123"
+    resource_group_name      = "rg-storage-modules-dev"
+    location                 = "eastus"
+    account_tier             = "Standard"
+    account_replication_type = "LRS"
+  }
+}
