@@ -75,3 +75,7 @@ Use fmt/init/validate, TFLint and Checkov, plus tests for input validation and s
 ### 10. Answer
 
 Plan changes, verify data retention and replication requirements, back up/migrate data, avoid replacement of populated accounts, and use staged changes with rollback.
+
+## Complete zero-to-hero guide
+
+See [ZERO-TO-HERO.md](./ZERO-TO-HERO.md) for the business scenario, architecture walkthrough, tool-by-tool explanations, implementation sequence, practical commands, troubleshooting playbook and additional scenario-based interview questions with answers.
