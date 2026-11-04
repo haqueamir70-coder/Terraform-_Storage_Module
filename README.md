@@ -56,7 +56,7 @@ Apply only after approval. This repository does not configure remote state or cr
 
 ## CI
 
-GitHub Actions checks formatting and validates the root module with a backend-free initialization. CI does not deploy Azure resources or validate subscription permissions.
+GitHub Actions checks formatting, validates the root module with a backend-free initialization and runs an advisory Checkov scan. Triage findings before using this as a blocking security gate. CI does not deploy Azure resources or validate subscription permissions.
 
 ## Author
 
