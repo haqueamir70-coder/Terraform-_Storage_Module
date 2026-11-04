@@ -10,5 +10,5 @@ output "resource_group_names" {
 
 output "storage_account_ids" {
   description = "Storage account IDs keyed by logical name."
-  value       = { for key, account in module.storage_accounts : key => account.id }
+  value       = module.storage_accounts.ids
 }
