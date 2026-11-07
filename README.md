@@ -1,46 +1,67 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:172554,50:7C3AED,100:38BDF8&height=190&section=header&text=Terraform+Azure+Storage+Modules&fontSize=32&fontColor=ffffff&animation=fadeIn" alt="Terraform Azure Storage Modules project banner" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:17112F,45:6D28D9,100:38BDF8&height=215&section=header&text=Azure%20Storage%20Module%20Factory&fontSize=34&fontColor=ffffff&animation=fadeIn" width="100%" alt="Terraform Azure Storage modules"/>
 
-<img src="https://readme-typing-svg.demolab.com/?font=Inter&weight=600&size=16&pause=1600&color=38BDF8&center=true&vCenter=true&width=900&height=36&lines=Terraform+Azure+Storage+Modules+%E2%80%A2+Architecture+%E2%80%A2+Automation+%E2%80%A2+Security" alt="Animated project focus line" />
+### Storage infrastructure as code · Reusable contracts · Private by default
 
-![Terraform](https://img.shields.io/badge/Infrastructure+as+Code-844FBA?style=for-the-badge&logo=terraform&logoColor=white) ![Azure](https://img.shields.io/badge/Storage+Services-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white) ![Security](https://img.shields.io/badge/Secure+Defaults-0F766E?style=for-the-badge)
+[![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=for-the-badge&logo=terraform&logoColor=white)](https://developer.hashicorp.com/terraform)
+[![Azure Storage](https://img.shields.io/badge/Azure_Storage-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://learn.microsoft.com/azure/storage/)
+[![Security](https://img.shields.io/badge/Security-Secure_Defaults-0F766E?style=for-the-badge)](https://learn.microsoft.com/azure/storage/common/storage-security-guide)
+
+**A focused Terraform module composition lab for creating Azure resource groups and StorageV2 accounts through typed inputs and reusable child modules.**
+
+[Architecture](#-architecture) · [Modules](#-module-contracts) · [Quick start](#-quick-start) · [Security model](#-storage-security-model)
 
 </div>
 
----
+> [!NOTE]
+> This is a reusable-module learning project with CI validation. It does not claim a live Azure deployment. The module deliberately disables public network access and shared-key access by default; consuming workloads need an approved private path and identity authorization.
 
-# Terraform Azure Storage Modules
+## The problem
 
-> **Status:** Reusable Terraform module learning project with a root composition layer, typed inputs, outputs, secure storage defaults and GitHub Actions validation. This is not a deployed production platform.
+Storage resources are easy to create but easy to expose incorrectly. This lab focuses on a repeatable module interface and conservative defaults so storage provisioning can be composed, reviewed and extended without embedding credentials or public-access assumptions.
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-  Inputs[Typed root variables] --> Root[Root Terraform module]
+  Vars[Typed environment inputs] --> Root[Root composition module]
   Root --> RG[Resource group child module]
   Root --> SA[Storage account child module]
-  RG --> Outputs[Root outputs]
-  SA --> Outputs
+  RG --> Out[Root outputs]
+  SA --> Out
+  Workload[Future workload identity] -. requires RBAC + private path .-> SA
 ```
 
-## Modules
+## Module contracts
 
 | Module | Responsibility |
 |---|---|
-| `azurerm_resource_group` | Create one or more resource groups with `for_each` |
-| `azurerm_storage_account` | Create one or more StorageV2 accounts with secure transport/network defaults |
+| `azurerm_resource_group` | Create one or more resource groups with stable `for_each` keys |
+| `azurerm_storage_account` | Create StorageV2 accounts with secure transport/network defaults |
+| Root module | Compose child modules and expose resource identifiers |
 
-The root module composes both child modules. Storage account resource group names are explicit inputs; ensure each referenced group is created by this configuration or already exists in the target subscription.
+Storage account resource-group names are explicit inputs. Ensure each referenced resource group is created by this configuration or already exists in the selected subscription.
 
-## Prerequisites
+## Quick start
 
-- Terraform CLI 1.6+
-- Azure CLI authenticated to a test subscription
-- Permission to create resource groups and storage accounts
+### Requirements
 
-## Validate
+- Terraform CLI 1.6+.
+- Azure CLI authenticated to a non-production test subscription for planning.
+- Permissions to create resource groups and storage accounts.
+
+### Configure
+
+Copy the example variables file and edit it:
+
+```bash
+cp terraform.tfvars.example terraform.tfvars
+```
+
+Choose a globally unique Storage account name (3–24 lowercase letters and numbers). Confirm the target resource group and region.
+
+### Validate
 
 ```bash
 terraform fmt -check -recursive
@@ -48,33 +69,63 @@ terraform init -backend=false
 terraform validate
 ```
 
-## Configure a plan
+### Review a plan
 
-Copy `terraform.tfvars.example` to `terraform.tfvars`, choose a globally unique storage account name (3–24 lowercase letters/numbers), and review the full plan:
+After backend and provider authentication are configured for the intended environment:
 
 ```bash
 terraform plan -out=tfplan
 terraform show -no-color tfplan
 ```
 
-Apply only after approval. This repository does not configure remote state or create private endpoints. Storage accounts default to public network access disabled and shared-key access disabled, so a workload will need an approved private endpoint/VNet path and Microsoft Entra data-plane authorization before it can access blob data.
+Do not apply until the full plan, region/SKU availability and estimated cost have been reviewed. This repository does not configure remote state or create private endpoints.
 
-## Security
+## Storage security model
 
-- HTTPS-only, TLS 1.2 minimum, shared-key authentication disabled and public network access disabled.
-- Do not commit Terraform state, plan files, credentials or real `*.tfvars`.
-- Configure encrypted remote state, access control, versioning and locking before team use.
-- Add private endpoints, private DNS and scoped RBAC assignments for a real workload; validate DNS and data-plane access from the intended network.
+- HTTPS-only transport and TLS 1.2 minimum.
+- Shared-key authentication disabled.
+- Public network access disabled.
+- Private blob container.
+- No credentials or real variable files committed.
 
-## CI
+**Connectivity and authorization are separate requirements.** Add a Private Endpoint, private DNS zone/link and a valid VNet route for private connectivity. Assign narrowly scoped Microsoft Entra data-plane roles to the consuming workload identity. Validate DNS resolution and blob operations from the actual client network.
 
-GitHub Actions checks formatting, validates the root module with a backend-free initialization and runs an advisory Checkov scan. Triage findings before using this as a blocking security gate. CI does not deploy Azure resources or validate subscription permissions.
+## CI and validation
 
-## Author
+The GitHub Actions workflow checks formatting, initializes without a remote backend, validates the root composition and runs an advisory Checkov scan. These checks do not deploy Azure resources or prove that a workload can access the storage account.
 
-MD Amirul Haque · [GitHub profile](https://github.com/haqueamir70-coder) · [LinkedIn](https://www.linkedin.com/in/md-amirul-haque/)
+## Repository map
 
+```text
+modules/
+  azurerm_resource_group/
+  azurerm_storage_account/
+main.tf
+variables.tf
+outputs.tf
+terraform.tfvars.example
+.github/workflows/
+docs/
+```
 
-## Architecture and interview preparation
+## Production-hardening checklist
 
-See the [architecture diagram and interview questions](docs/README.md) for the repository-specific design walkthrough and technical interview guide.
+- [ ] Configure encrypted remote state, versioning, locking and access restrictions.
+- [ ] Add Private Endpoint and private DNS integration.
+- [ ] Assign least-privilege data-plane RBAC to workload identities.
+- [ ] Enable diagnostic settings and retention appropriate to the workload.
+- [ ] Define backup, recovery and lifecycle policies.
+- [ ] Validate access from the intended private network.
+- [ ] Review cost and data-residency requirements.
+
+## Documentation
+
+- [Architecture and interview guide](docs/README.md)
+- [Zero-to-hero guide](docs/ZERO-TO-HERO.md)
+- [Advanced interview bank](docs/ADVANCED-INTERVIEW-BANK.md)
+
+## Maintainer
+
+**MD Amirul Haque** · [GitHub](https://github.com/haqueamir70-coder) · [LinkedIn](https://www.linkedin.com/in/md-amirul-haque/)
+
+<sub>Private by default. Identity for access. Infrastructure defined as code.</sub>
